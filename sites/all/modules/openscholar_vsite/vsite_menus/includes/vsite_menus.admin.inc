@@ -105,6 +105,12 @@ function vsite_menus_settings_form($form_state){
         '#size' => 30,
         '#default_value' => !empty($link['link_title']) ? $link['link_title'] : ucwords(str_replace('_', ' ', $key)),
       ),
+      'tooltip' => array(
+        '#type' => 'textfield',
+        '#description' => 'A tooltip describing the link',
+        '#size' => 30,
+        '#default_value' => isset($link['options']['attributes']['title']) ? $link['options']['attributes']['title'] : '',
+      ),
       'region' => array(
         '#type' => 'select',
         '#options' => $a_site_menus,
@@ -193,11 +199,18 @@ function vsite_menus_new_link_form(&$form_state) {
       '#type' => 'textfield',
       '#title' => t('Menu Title'),
       '#description' => t('What text will appear for the entry.'),
+      '#required' => true,
+    ),
+    'new_menu_tooltip' => array(
+      '#type' => 'textfield',
+      '#title' => t('Menu Help Text'),
+      '#description' => t('(Optional) Tooltip text that describes this link.'),
     ),
     'new_menu_url' => array(
       '#type' => 'textfield',
       '#title' => t('URL'),
       '#description' => t('Enter the URL for the new menu entry.'),
+      '#required' => true,
     ),
     'new_menu_region' => array(
       '#type' => 'select',
@@ -253,34 +266,42 @@ function vsite_menus_settings_form_reset($form, &$form_state) {
 }
 
 function vsite_menus_settings_form_validate(&$form, &$form_state) {
-  if ($form_state['values']['new_menu_title'] XOR $form_state['values']['new_menu_url']) {
+  $url = $form_state['values']['new_menu_url'];
+  $title = $form_state['values']['new_menu_title'];
+
+  if ($title XOR $url) {
     // if only one is set
-    form_set_error($form_state['values']['new_menu_title']?'new_menu_url':'new_menu_title', t('Missing URL or Title for new link!'));
+    form_set_error($title?'new_menu_url':'new_menu_title', t('Missing URL or Title for new link!'));
   }
-  elseif ($form_state['values']['new_menu_title'] && $form_state['values']['new_menu_url']) {
+  elseif ($title && $url) {
   	global $base_url;
 
   	$vsite = vsite_get_vsite();
   	$site_base = $vsite->get_absolute_url();
 
-  	if(strpos($form_state['values']['new_menu_url'],$site_base) === 0){
-  		$a_path_info = parse_url($form_state['values']['new_menu_url']);
-  		$form_state['values']['new_menu_url'] = $a_path_info['path'];
-  	}//Strip off the domain if this is a local path
+  	if (strpos($url, $site_base) === 0) {
+  	  // in the vsite
+  		$url = str_replace($site_base, '', $url);
+  	}
+  	elseif (strpos($url, $base_url)) {
+  	  // in other vsite
+  	  $path_info = parse_url($url);
+  	  $url = $path_info['path'];
+  	}
 
-  	if(menu_path_is_external($form_state['values']['new_menu_url'])){
-  	  $form_state['values']['new_menu_router_path'] = $form_state['values']['new_menu_url'];
+  	if(menu_path_is_external($url)){
+  	  $form_state['values']['new_menu_router_path'] = $url;
   	}else{
-  		$form_state['values']['new_menu_url'] = drupal_get_normal_path(ltrim($form_state['values']['new_menu_url'],"/"));
-
-  		$item = menu_get_item($form_state['values']['new_menu_url']);
+  		$url = drupal_get_normal_path(ltrim($url,"/"));
+  		$item = menu_get_item($url);
   		if($item && $item['access']){
   			$form_state['values']['new_menu_router_path'] = $item['path'];
   		}
   	}
 
     // the link isn't valid.
-    if(!isset($form_state['values']['new_menu_router_path'])) form_set_error('new_menu_url', t('The URL is not valid'));
+    if(!isset($form_state['values']['new_menu_router_path']) || !link_validate_url($form_state['values']['new_menu_router_path']))
+      form_set_error('new_menu_url', t('The URL is not valid'));
   }
 }
 
@@ -325,6 +346,14 @@ function vsite_menus_settings_form_submit($form, &$form_state) {
     $link['key'] = $menu_key;
     $link['hidden'] = false;
 
+    //Create the options array if it does not exist
+    if(!is_array($link['options'])) $link['options'] = array();
+
+    //Add the attributes option if it does not exist
+    if(!array_key_exists('attributes',$link['options'])) $link['options']['attributes'] = array();
+
+    $link['options']['attributes']['title'] = $data['tooltip'];
+
     if ($link['user_created'] && $region == 'none' || !isset($link['link_path'])) {
       // we're deleting the link
       unset($menus[$region][$menu_key]);
@@ -334,6 +363,11 @@ function vsite_menus_settings_form_submit($form, &$form_state) {
 
   if ($form_state['values']['new_menu_title'] && $form_state['values']['new_menu_url']) {
 
+  	$a_options = array();
+  	if(strlen($form_state['values']['new_menu_tooltip'])){
+  		$a_options['attributes'] = array('title' => $form_state['values']['new_menu_tooltip']);
+  	}
+
     // add a new menu
     $new_link = array(
       'menu_name' => $form_state['values']['new_menu_region'],
@@ -341,7 +375,7 @@ function vsite_menus_settings_form_submit($form, &$form_state) {
       'router_path' => $form_state['values']['new_menu_router_path'],
       'key' => $form_state['values']['new_menu_region'].':'.$form_state['values']['new_menu_url'],
       'link_title' => check_plain($form_state['values']['new_menu_title']),
-      'options' => array(),
+      'options' => $a_options,
       'module' => 'system',
       'hidden' => '0',
       'external' => menu_path_is_external($form_state['values']['new_menu_url'])?'1':'0',

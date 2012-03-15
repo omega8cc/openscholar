@@ -89,15 +89,9 @@ body.sidebar-second #cp-content {
   overflow: hidden;
   }
 
-.frame {
-  overflow:hidden;
-  }
-
 .innerframe {
   position: absolute;
   width: 100%;
-  overflow: auto;
-  overflow-x: hidden;
   top: 0;
   bottom: 0;
   min-height:200px;
@@ -183,6 +177,11 @@ right: 4px;
  top: 4px;
   }
   
+.innerframe > .help {
+	position: absolute;
+right: 20px;
+ top: 10px;
+  }  
   
 h2.title + .help {
 left: 30px;
@@ -231,6 +230,58 @@ table tr.even {
   padding: 0;
   }
 
+/* CONTENT, TAXO, MENU & USERS TABLE STYLES */
+
+thead.tableHeader-processed tr,
+body.page-cp-content-comments thead tr,
+body.page-cp-users thead tr,
+table#fields tr.region-features,
+table#fields tr.region-scholar_secondary_menu,
+table#fields tr.region-none {
+	height:25px;
+	background:#ececec;
+    border-bottom: 3px solid #c4c2c2;
+    font-size:11px;
+}
+ 
+thead.tableHeader-processed tr a,
+body.page-cp-content-comments thead tr a {
+	color: #005C9C;
+	text-decoration:underline;
+}
+  
+body.page-cp-content tbody tr.even,
+body.page-cp-content-files tbody tr.even,
+body.page-cp-content-comments tbody tr.even,
+body.page-cp-users tbody tr.even {
+background: #f3f3f3;
+}
+
+
+
+body.page-cp-build-taxonomy table th:nth-child(1) {
+	width:80%;
+}
+
+body.page-cp-build-taxonomy table th:nth-child(2) {
+	width:20%;
+}
+
+table#fields tr.region-features,
+table#fields tr.region-scholar_secondary_menu, 
+table#fields tr.region-none {
+	border-top:20px solid #FFF;
+}
+
+table#fields td {
+	padding:10px 0 5px 0;
+}
+
+table#fields tr.region-features td,
+table#fields tr.region-scholar_secondary_menu td, 
+table#fields tr.region-none td {
+	padding:3px 3px
+}
 
 /* SPECIFIC PAGE VIEWS */
 

@@ -228,6 +228,8 @@ class vsite extends space_og {
       'help/*',
       'site/register',
       'welcome',
+      'contact',
+      'node',
     );
 
     $excluded = array_merge($excluded, $more);
